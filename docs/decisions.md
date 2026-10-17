@@ -58,3 +58,13 @@ Additions made while building the parser (Step 4), open to veto:
 - Rounding is round-half-up on the exact binary value (ECMAScript `toExponential` rule).
 - Display uses the Unicode minus sign (−), Greek mu (μ, U+03BC), Greek capital omega (Ω, U+03A9), and a no-break space between number and unit so a value never wraps across lines.
 - Serialized numbers use `canonicalNumber` (shortest round-trip text, −0 becomes 0).
+
+### D15. Node labels (changes the spec's data model table)
+Raw connection points carry no label: a point is `{ id, isGround }`. Labels belong to **electrical nodes** (points joined by wires, decision D7) and are assigned in `src/core/topology.ts`, deterministically from circuit order: the ground node is "0", the others are A, B, C, ... in order of each node's first point in the circuit (after Z: AA, AB, ...). Layout does not assign labels. **Spec update needed:** in "Circuit data model", Node becomes `id, isGround`, and the label moves to the electrical node.
+
+### D16. Component plugin interface details (spec "Component plugin interface")
+- **Current control by any part.** A part may expose `branchCurrent(ctx)`: its a → b current as a linear combination of solver unknowns (resistor (Va − Vb)/R, voltage source and wire their extra unknown, current source a constant). Current-controlled sources read it through `StampContext.currentOf(id)`, so they can be controlled by any part that has a single branch current, including a resistor. A control reference to a part without one (ground, op amp) is a validation error.
+- **Independent self-checks.** After the solve each part reports its terminal currents from its own relation (`terminalCurrents`) and any constraint residuals (`constraintResiduals`), never from the matrix.
+- **Roles.** `ElectricalRole` has a sixth value, `multiport`, for parts such as the op amp and transformer whose validity rules the part supplies itself.
+- **Ids and names.** Points are `n0, n1, ...` and parts `c0, c1, ...` in the order added to one builder; names use per-prefix counters owned by that builder (R1, R2, ...). Built circuits are deep-frozen.
+- **Reserved parts** (capacitor, inductor, four dependent sources, op amp, diode, switch, transformer) are registered with `status: 'reserved'`; a circuit using one fails validation.
