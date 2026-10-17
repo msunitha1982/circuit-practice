@@ -1,0 +1,47 @@
+# Decisions log
+
+Settled decisions. Each entry says what was decided, when, and which spec section it affects. SPEC.md should be updated to match.
+
+## 2026-10-17 (M1 session)
+
+### D1. UI approach: Preact (spec Open decision 5)
+Preact, with JSX compiled by Vite's built-in transform (no extra Vite plugin).
+
+### D2. Language: English only, strings in one place (spec Open decision 12)
+All user-facing strings live in `src/ui/strings.ts`.
+
+### D3. Stack
+TypeScript (strict, plus `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`), Vite, Vitest. Node 24 pinned in `.nvmrc`, `package.json` engines and CI. Exact dependency versions, `package-lock.json` committed, `npm ci` in CI. `@types/node` is a dev dependency only, so tests can read source files (rules test).
+
+### D4. Repository and deploy
+Private GitHub repo `circuit-practice` (working name, spec Open decision 10 still open). Vite builds with relative paths (`base: './'`), so a rename is safe. CI (type check and all tests, including the rules test) runs on every push and pull request. The Pages deploy workflow runs **only by manual trigger until M7**, and it runs the same checks first, so a failing check blocks the deploy. The seed sweep joins CI when the generator exists (M2).
+
+### D5. Fixture answers
+Textbook fixtures are named by the classic configuration they represent, not by a textbook example. Each expected answer is derived independently of the MNA solver, as exact fractions, by a different method (series-parallel reduction, divider formulas, or Kirchhoff equations solved with exact rationals). No textbook example, page or number is cited from memory.
+
+### D6. Component symbols (spec "Component plugin interface", item 3)
+A component entry has an optional, data-only `symbol` field (drawing primitives and terminal anchor points on a unit grid). It holds no drawing code, so `core` still depends on nothing. Empty in M1, filled in M2.
+
+### D7. Wires
+In the solver a wire is a 0 V voltage source, so every wire has a current. A loop made only of wires (or wires and voltage sources) is singular and rejected. Separately, `core` provides a function that collapses wire-joined nodes into **electrical nodes**. Nodal and mesh methods and node labels use electrical nodes only, and wires do not count toward equation counts.
+
+### D8. Ground
+The node's `isGround` flag is the source of truth. Exactly one ground node per circuit. The ground component has one terminal, stamps nothing, and must sit on the ground node.
+
+### D9. Power sign convention
+`P` is power **absorbed**: P = V × conj(I) under the passive sign convention (V = V(a) − V(b), I positive from a to b through the component). A source that supplies power has negative P. At DC this is ordinary V × I. Whether AC phasors are peak or RMS (which changes a factor of 1/2) is deferred to the AC milestone.
+
+### D10. Self-check tolerances and conditioning
+- KCL and power balance pass when the residual is at most 1e-9 relative to the largest current (or power) magnitude in the circuit.
+- KCL and power balance are computed from each component's own relation (V/R, source values, wire currents from the solver), not from the matrix residual.
+- A matrix whose condition number is above 1e12 is rejected as ill-conditioned.
+- These are starting values and can be tuned.
+
+### D11. Determinism across browsers
+The solver and formatter avoid engine-dependent math functions (`Math.pow`, `Math.log10`, `Math.hypot`) and use only + − × ÷ and `Math.sqrt`, which IEEE 754 requires to be correctly rounded. A rules test enforces this, and also forbids `Math.random` anywhere and `toFixed`, `toPrecision` and `Intl.NumberFormat` outside `src/core/format.ts`.
+
+### D12. Value representation
+Source values are complex phasors. A resistance is a positive real number; its impedance is computed as complex. There is one complex code path; DC is frequency 0.
+
+### D13. Unit parser
+Strict SI case (m is milli, M is mega), with k and K both accepted for kilo. u, µ and μ all mean micro. Accepts the Unicode minus sign (−) as well as the hyphen, "ohm", "ohms" and both omega signs (Ω U+03A9, Ω U+2126), and no space between number and unit ("2.5mA"). No thousands separators.

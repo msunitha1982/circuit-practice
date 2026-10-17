@@ -65,6 +65,8 @@ Fill these in as soon as they exist, and keep them current:
 - Dev server: `npm run dev`
 - Type check: `npm run typecheck`
 - Tests: `npm test`
-- Seed sweep: `npm run sweep` (add when the generator exists)
-- Gallery: `npm run gallery` (add in M2)
-- Build: `npm run build`
+- Seed sweep: `npm run sweep` (not yet: arrives with the generator in M2)
+- Gallery: `npm run gallery` (not yet: M2)
+- Build: `npm run build` (runs the type check first)
+- Node version: 24 (`.nvmrc`). CI uses `npm ci`.
+- Deploy: manual only until M7 (GitHub Actions → "Deploy to GitHub Pages" → Run workflow)
