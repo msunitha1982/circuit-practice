@@ -45,3 +45,16 @@ Source values are complex phasors. A resistance is a positive real number; its i
 
 ### D13. Unit parser
 Strict SI case (m is milli, M is mega), with k and K both accepted for kilo. u, µ and μ all mean micro. Accepts the Unicode minus sign (−) as well as the hyphen, "ohm", "ohms" and both omega signs (Ω U+03A9, Ω U+2126), and no space between number and unit ("2.5mA"). No thousands separators.
+
+Additions made while building the parser (Step 4), open to veto:
+- Single-letter unit symbols are also accepted in lower case ("5v", "2.5ma", "3 w"), since no supported prefix uses those letters. Spelled-out units ("volts", "amps", "watts", "ohms") are accepted in any case.
+- A prefix and its unit must be adjacent ("5 mA", not "5 m A").
+- A missing unit is accepted by the parser; whether a question requires units is a question-builder decision (M3).
+
+### D14. Number display
+- Default 3 significant figures, engineering prefixes from f (10⁻¹⁵) to T (10¹²). Outside that range: engineering exponent text such as "100e-18 A".
+- Trailing zeros are kept by default ("4.70 kΩ") to show significant figures; component labels can trim them ("4.7 kΩ").
+- Plain decimal style is available ("0.00250 A").
+- Rounding is round-half-up on the exact binary value (ECMAScript `toExponential` rule).
+- Display uses the Unicode minus sign (−), Greek mu (μ, U+03BC), Greek capital omega (Ω, U+03A9), and a no-break space between number and unit so a value never wraps across lines.
+- Serialized numbers use `canonicalNumber` (shortest round-trip text, −0 becomes 0).
