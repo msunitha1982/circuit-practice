@@ -31,6 +31,8 @@ Before saying a task is finished, run and report the result of:
 
 Every milestone adds its own tests. Every confirmed bug gets a regression test that pins its seed. Never delete or weaken a test to get green. If a test is wrong, explain why and ask first.
 
+After finishing each step, invoke the reviewer subagent. Include its verdict in your report word for word. A step is not done while the reviewer has BLOCKING problems open.
+
 ## Working style
 
 - Start each milestone with a short plan (modules, files, order, how you will test it) and wait for my OK before writing code.
