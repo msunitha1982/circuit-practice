@@ -39,7 +39,8 @@ describe('formatQuantity, engineering style (default 3 significant figures)', ()
     [1e15, 'W', '1.00e15 W'],
   ];
   for (const [value, unit, expected] of cases) {
-    it(`${value} ${unit} -> "${expected}"`, () => {
+    // Object.is distinguishes −0, which String() would print as "0" and duplicate the title.
+    it(`${Object.is(value, -0) ? '-0' : value} ${unit} -> "${expected}"`, () => {
       expect(formatQuantity(value, unit)).toBe(show(expected));
     });
   }
