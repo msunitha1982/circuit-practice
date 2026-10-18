@@ -6,7 +6,7 @@ Circuit Practice Generator: a static website (TypeScript, Vite, deployed to GitH
 
 ## Current milestone
 
-**M1 Foundations.** Work only on this milestone. Update this line when a gate passes and I confirm.
+**M2 Generator and gallery.** Work only on this milestone. Update this line when a gate passes and I confirm. (M1 Foundations gate passed and confirmed 2026-10-18.)
 
 ## Hard rules
 
