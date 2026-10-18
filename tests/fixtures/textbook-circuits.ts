@@ -95,15 +95,16 @@ function loadedDividerWithWires(): Fixture {
   b.add('resistor', [mid, g], R(r2));
   b.add('wire', [mid, p4]);
   const R3 = b.add('resistor', [p4, g], R(rl));
-  // Wires make drawn points p1,p2 one node (A) and mid,p4 one node (B).
-  // R1 from A to B; R2 and R3 both from B to 0, so R2 ∥ R3 = 3k ∥ 6k = 2 kΩ.
-  // V(B) = 10·2/(2 + 2) = 5 V. Total current through W1 (A side, from p1 to p2) = 10/4k = 2.5 mA.
+  // Wires make drawn points A.1 (p1), A.2 (p2) one node A, and B.1 (mid), B.2 (p4) one node B.
+  // V1 sits on A.1; W1 joins A.1→A.2; R1 runs A.2→B.1; R2 B.1→0; W2 joins B.1→B.2; R3 B.2→0.
+  // R2 ∥ R3 = 3k ∥ 6k = 2 kΩ. V(B) = 10·2/(2 + 2) = 5 V at both B.1 and B.2.
+  // All of V1's current passes through W1 from A.1 to A.2: 10/4k = 2.5 mA.
   const lower = parallel(r2, rl);
   const vB = vs.mul(lower).div(series(r1, lower));
   return {
     name: 'Loaded voltage divider drawn with wires', category: 'ordinary',
     method: 'Series-parallel reduction, then voltage divider',
-    wiring: 'V1 10 V +A −0; W1 wire within A; R1 2 kΩ A→B; R2 3 kΩ B→0; W2 wire within B; R3 6 kΩ B→0',
+    wiring: 'V1 10 V +A.1 −0; W1 wire A.1→A.2; R1 2 kΩ A.2→B.1; R2 3 kΩ B.1→0; W2 wire B.1→B.2; R3 6 kΩ B.2→0',
     circuit: b.build(),
     expect: [nodeV(mid, vB), nodeV(p4, vB), cur(R3, vB.div(rl)), cur(W1, vs.div(series(r1, lower)))],
   };
@@ -611,7 +612,7 @@ function twoLoopGroundMoved(): Fixture {
 }
 
 function shortedAndZeroBranch(): Fixture {
-  const v1 = q(10), v2 = q(5), r1 = q(5), r2 = q(5), r3 = q(7), r4 = q(7);
+  const v1 = q(10), v2 = q(4), r1 = q(6), r2 = q(4), r3 = q(7), r4 = q(7);
   const b = circuitBuilder(defaultRegistry);
   const g = b.node({ ground: true });
   const nA = b.node();
@@ -625,15 +626,17 @@ function shortedAndZeroBranch(): Fixture {
   const R3 = b.add('resistor', [pB2, pB1], R(r3)); // shorted: a wire joins its two ends
   const R4 = b.add('resistor', [pB1, nC], R(r4));
   const V2 = b.add('vsource', [nC, g], V(v2));
-  // R3 sits across a wire (both ends are node B): zero voltage, zero current.
-  // R4 runs from B to C, where V2 holds C at 5 V. KCL at B (R3 carries nothing):
-  //   (10 − V(B))/5 = V(B)/5 + (V(B) − 5)/7   →   19·V(B) = 95   →   V(B) = 5 V.
-  // So R4 carries zero current. This is not symmetry: it happens because V2 equals the divider voltage of R1 and R2.
+  // Node B has two drawn points joined by W1 (B.1→B.2). R3 runs B.2→B.1, so it sits across the wire:
+  // zero voltage, zero current.
+  // R4 runs from B.1 to C, where V2 holds C at 4 V. KCL at B (R3 carries nothing):
+  //   (10 − V(B))/6 = V(B)/4 + (V(B) − 4)/7   →   V(B) = 4 V  (exact solve below).
+  // So R4 carries zero current. This is not symmetry (R1 = 6 Ω and R2 = 4 Ω differ): it happens because V2 equals
+  // the unloaded divider voltage 10·4/(6 + 4) = 4 V.
   const [vB] = solveExact([[r1.inv().add(r2.inv()).add(r4.inv())]], [v1.div(r1).add(v2.div(r4))]) as [Q];
   return {
     name: 'Resistor shorted by a wire, and a zero-current branch not caused by symmetry', category: 'special',
     method: 'Short gives V = 0; KCL at B, solved exactly',
-    wiring: 'V1 10 V +A −0; R1 5 Ω A→B; R2 5 Ω B→0; W1 wire within B; R3 7 Ω B→B; R4 7 Ω B→C; V2 5 V +C −0',
+    wiring: 'V1 10 V +A −0; R1 6 Ω A→B.1; R2 4 Ω B.1→0; W1 wire B.1→B.2; R3 7 Ω B.2→B.1; R4 7 Ω B.1→C; V2 4 V +C −0',
     circuit: b.build(),
     expect: [
       cur(R3, q(0)), volt(R3, q(0)),

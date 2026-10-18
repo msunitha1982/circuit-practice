@@ -1,12 +1,16 @@
 // Plain-text wiring and reference directions, generated from the circuit
 // itself so the description can never disagree with what is solved.
 // Node names are the electrical-node labels: ground is 0, others A, B, C, ...
+// When wires join several drawn points into one node, each point is named
+// separately: A.1, A.2, ... in circuit order (node A's first point is A.1).
+// A node with a single point is just its label.
 //
 // Wiring format, one entry per part, in the order the parts were added:
 //   R1 3 kΩ A→B      resistor; its reference direction is A to B
 //   V1 12 V +A −0    voltage source; + terminal on A, − terminal on 0
 //   I1 6 mA 0→A      current source; pushes 6 mA through itself from 0 to A
-//   W1 wire within A wire joining two drawn points that are both node A
+//   W1 wire A.1→A.2  wire joining drawn points A.1 and A.2 (both node A);
+//                    its current is measured from A.1 to A.2
 //   GND1 at 0        ground symbol
 
 import { defaultRegistry } from '../../src/core/components';
@@ -26,10 +30,14 @@ function realValue(params: ComponentParams, key: string): number {
   throw new Error(`Param "${key}" is not a real value`);
 }
 
+/** Name of a drawn point: its node label, plus ".k" when the node has several points. */
 export function nodeLabels(circuit: Circuit): (pointId: string) => string {
   const topo = analyzeTopology(circuit, defaultRegistry);
-  const labelOf = new Map(topo.electricalNodes.map((n) => [n.id, n.label]));
-  return (pointId) => labelOf.get(topo.nodeOf.get(pointId) ?? '') ?? '?';
+  const names = new Map<string, string>();
+  for (const n of topo.electricalNodes) {
+    n.members.forEach((m, k) => names.set(m, n.members.length > 1 ? `${n.label}.${k + 1}` : n.label));
+  }
+  return (pointId) => names.get(pointId) ?? '?';
 }
 
 export function describeWiring(circuit: Circuit): string {
@@ -41,7 +49,7 @@ export function describeWiring(circuit: Circuit): string {
         case 'resistor': return `${c.name} ${fmt(realValue(c.params, 'resistance'), 'Ω')} ${a}→${b}`;
         case 'vsource': return `${c.name} ${fmt(realValue(c.params, 'voltage'), 'V')} +${a} −${b}`;
         case 'isource': return `${c.name} ${fmt(realValue(c.params, 'current'), 'A')} ${a}→${b}`;
-        case 'wire': return a === b ? `${c.name} wire within ${a}` : `${c.name} wire ${a}–${b}`;
+        case 'wire': return `${c.name} wire ${a}→${b}`;
         case 'ground': return `${c.name} at ${a}`;
         default: return `${c.name} (${c.type}) ${c.terminals.map(label).join(',')}`;
       }
@@ -63,7 +71,7 @@ const UNIT: Record<ExpectationLike['kind'], UnitSymbol> = {
 export function describeExpectation(circuit: Circuit, e: ExpectationLike): string {
   const label = nodeLabels(circuit);
   const value = `${fmt(e.value.toNumber(), UNIT[e.kind])}  [exact ${e.value.toString()}]`;
-  if (e.kind === 'node-voltage') return `V(${label(e.id)}), node ${label(e.id)} relative to ground 0 = ${value}`;
+  if (e.kind === 'node-voltage') return `V(${label(e.id)}), point ${label(e.id)} relative to ground 0 = ${value}`;
   const c = circuit.components.find((x) => x.id === e.id);
   if (!c) throw new Error(`No part "${e.id}"`);
   const [a = '', b = ''] = c.terminals.map(label);
