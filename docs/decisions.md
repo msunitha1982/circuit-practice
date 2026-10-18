@@ -71,3 +71,8 @@ Raw connection points carry no label: a point is `{ id, isGround }`. Labels belo
 
 ### D17. What the self-checks catch beyond the condition number (finding, Step 6)
 The 1-norm condition number of the MNA matrix does not detect every untrustworthy answer. Example: a 1 µΩ resistor in series with 1 GΩ gives a condition number of only about 4e6, but the tiny resistor's current from its own V/R subtracts two voltages that agree to 15 digits, and the independent KCL check fails by 4.6%. Such circuits are rejected (as `kcl-failed`), which is the intended behavior. Measured margins at the default 1e-9 tolerance: a 1 Ω / 1 MΩ divider passes with a KCL residual of 8e-11; a 1 µΩ / 1 kΩ divider (ratio 1e9) fails at 8e-8. Practical consequence for the generator (M2): resistor values within one circuit should stay within a ratio of about 1e6, which friendly and E12 value sets already do.
+
+### D18. Meaning of "near the ill-conditioned limit" for fixtures (2026-10-18, owner accepted reviewer recommendation)
+Realistic resistor values never bring the MNA condition number close to the 1e12 rejection threshold, and the condition number is not the real accuracy risk (D17). So:
+- The wide-ratio fixture (10 Ω with 4.7 MΩ, condition number 37) stays as an accuracy test at microamp and microvolt scale. It is not a test of the rejection limit.
+- The trusted-range boundary is covered by the Step 6 solver tests in `tests/solver.test.ts`: a 1 Ω / 1 MΩ divider passes; a 1 µΩ / 1 GΩ divider is rejected by the KCL self-check; a 1 pΩ / 1 Ω divider is rejected as ill-conditioned.
